@@ -38,3 +38,62 @@ t = "https://www.ivoox.com/listenembeded_mn_12345678_1.mp3?source=EMBEDEDHTML5";
 
 *NOTA* : para facilitar la descarga automática deshabilita la opción de "Confirmar la descarga de ficheros"
 
+## Código
+
+En el manifest se configura que este scritp se ejecutará sólo cuando el navegador esté visitando la web de ivoox:
+
+```
+"content_scripts": [
+    {
+      "matches": [
+        "https://*.ivoox.com/*"
+      ],      
+      "run_at": "document_end",
+      "js": [
+        "src/FileSaver.min.js",
+        "src/util.js",
+        "src/inject/inject.js"
+      ]
+    }
+  ]
+```
+
+Momento en el cual injectará los 3 scripts indicados.
+
+- FileSaver es una librería publica para descargar ficheros remotos mediante Javascript
+- util.js no tiene uso actualmente
+- inject donde reside la lógica de la extensión
+
+Prácticamente la totalidad de los ficheros de este proyecto son para tener la "infraestructura" mínima para construir una extensión
+de Chrome salvo el fichero `ext/src/inject/injects.js` donde reside la lógica de la extensión
+
+```
+chrome.extension.sendMessage({}, function(response) {
+	var readyStateCheckInterval = setInterval(function() {
+		if (document.readyState === "complete") {		
+                  clearInterval(readyStateCheckInterval);                  
+                  var div = document.body.querySelector('div[id="main"]>div>div[class="container"]')
+                  if( div ){
+                        var newDiv = document.createElement("div");
+                        var newContent = document.createElement("button",{id:"ivoox-download"});
+                        newContent.innerHTML = "Lo quiero TODO";
+                        newDiv.appendChild(newContent);
+                        div.append(newDiv);
+                        newContent.onclick=function(){
+                              downloadPodcasts(newContent);
+                        }
+                  }
+            }
+	}, 10);
+});
+```
+
+## Build
+
+Para generar el zip con el formato que requiere Chrome hay que ejecutar
+
+`./gradlew build`
+
+En realidad no se requiere una herramienta como gradle pues lo que se hace simplemente es actualizar el manifest y comprimirlo pero es una
+herramienta que uso a menudo y que me deja crear tasks y añadir extensiones 
+
